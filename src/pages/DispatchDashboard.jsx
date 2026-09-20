@@ -3,7 +3,17 @@ import { api } from '../services/api';
 
 const STATUS_TABS = ['ALL', 'pending', 'in_transit', 'completed'];
 
-export default function DispatchDashboard({ token }) {
+const PKG_TYPES = [
+  { code: 'BIN-001', label: 'Bin' },
+  { code: 'PAL-001', label: 'Pallet' },
+  { code: 'STP-001', label: 'Steel pallet' },
+  { code: 'TRO-001', label: 'Trolley' },
+  { code: 'CB-001', label: 'Carton box' }
+];
+
+const emptyQuantities = () => Object.fromEntries(PKG_TYPES.map((p) => [p.code, 0]));
+
+export default function DispatchDashboard({ token, user }) {
   const [dispatches, setDispatches] = useState([]);
   const [receivers, setReceivers] = useState([]);
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -15,8 +25,7 @@ export default function DispatchDashboard({ token }) {
   const [receiverId, setReceiverId] = useState('');
   const [vehicleNo, setVehicleNo] = useState('');
   const [driverDetails, setDriverDetails] = useState('');
-  const [packageCode, setPackageCode] = useState('');
-  const [quantity, setQuantity] = useState(1);
+  const [quantities, setQuantities] = useState(emptyQuantities());
 
   const loadDispatches = async () => {
     setLoading(true);
@@ -52,13 +61,26 @@ export default function DispatchDashboard({ token }) {
     setReceiverId(receivers[0]?.id || '');
     setVehicleNo('');
     setDriverDetails('');
-    setPackageCode('');
-    setQuantity(1);
+    setQuantities(emptyQuantities());
     setShowCreateModal(true);
+  };
+
+  const handleQuantityChange = (code, value) => {
+    setQuantities((prev) => ({ ...prev, [code]: value }));
   };
 
   const handleCreateDispatch = async (e) => {
     e.preventDefault();
+
+    const lines = PKG_TYPES
+      .map((p) => ({ package_code: p.code, dispatched_qty: Number(quantities[p.code]) || 0 }))
+      .filter((line) => line.dispatched_qty > 0);
+
+    if (lines.length === 0) {
+      alert('Enter a quantity greater than zero for at least one package type.');
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await api.createDispatch(token, {
@@ -66,7 +88,7 @@ export default function DispatchDashboard({ token }) {
         dispatch_date_time: new Date().toISOString(),
         vehicle_no: vehicleNo,
         driver_details: driverDetails,
-        lines: [{ package_code: packageCode, dispatched_qty: Number(quantity) }]
+        lines
       });
 
       if (res.ok) {
@@ -144,7 +166,7 @@ export default function DispatchDashboard({ token }) {
       {/* New Dispatch Modal */}
       {showCreateModal && (
         <div className="modal-overlay">
-          <div className="modal-box">
+          <div className="modal-box" style={{ maxWidth: '520px' }}>
             <h3>Create New Dispatch Gate Pass</h3>
             <form onSubmit={handleCreateDispatch}>
               <div className="form-field">
@@ -161,21 +183,48 @@ export default function DispatchDashboard({ token }) {
                 <input value={vehicleNo} onChange={(e) => setVehicleNo(e.target.value)} placeholder="e.g. MH-12-AB-1234" />
               </div>
               <div className="form-field">
-                <label>Driver Details</label>
+                <label>Driver Details <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
                 <input value={driverDetails} onChange={(e) => setDriverDetails(e.target.value)} placeholder="e.g. John Doe" />
               </div>
               <div className="form-field">
-                <label>Package Code</label>
-                <input required value={packageCode} onChange={(e) => setPackageCode(e.target.value)} placeholder="e.g. PKG-001" />
+                <label>Warehouse PIC</label>
+                <div style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', background: '#F8FAFC', color: 'var(--text-muted)' }}>
+                  {user?.name || 'NX Dispatch Staff'} <span style={{ fontSize: '0.75rem' }}>(auto-fetched from your login)</span>
+                </div>
               </div>
+
               <div className="form-field">
-                <label>Quantity</label>
-                <input type="number" min="1" required value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+                <label>Package quantities</label>
+                <table className="custom-table" style={{ boxShadow: 'none' }}>
+                  <thead>
+                    <tr>
+                      <th>PACKAGE TYPE</th>
+                      <th style={{ textAlign: 'right' }}>DISPATCHED QTY</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PKG_TYPES.map((p) => (
+                      <tr key={p.code}>
+                        <td>{p.label} <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>({p.code})</span></td>
+                        <td style={{ textAlign: 'right' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            value={quantities[p.code]}
+                            onChange={(e) => handleQuantityChange(p.code, e.target.value)}
+                            style={{ width: '100px', textAlign: 'right', padding: '6px 8px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+
               <div className="modal-footer">
                 <button type="button" className="btn-action" onClick={() => setShowCreateModal(false)}>Cancel</button>
                 <button type="submit" className="btn-primary" disabled={saving || !receiverId}>
-                  {saving ? 'Issuing...' : 'Issue Dispatch'}
+                  {saving ? 'Issuing...' : 'Submit & notify receiver'}
                 </button>
               </div>
             </form>
