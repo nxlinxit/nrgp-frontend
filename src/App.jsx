@@ -46,7 +46,7 @@ export default function App() {
         <Header title={meta.title} breadcrumb={meta.breadcrumb} />
 
         {activeTab === 'dispatches' && (user.role === 'ADMIN' || user.role === 'NX' || user.role === 'RECEIVER') && (
-          <DispatchDashboard token={token} />
+          <DispatchDashboard token={token} user={user} />
         )}
         {activeTab === 'nx-users' && user.role === 'ADMIN' && (
           <AdminEmployees token={token} />
