@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import Login from './pages/Login';
 import AdminEmployees from './pages/AdminEmployees';
-import { api } from './services/api';
+import AdminSuppliers from './pages/AdminSuppliers';
+import DispatchDashboard from './pages/DispatchDashboard';
+
+const TAB_META = {
+  dispatches: { title: 'Dispatches', breadcrumb: 'Dispatches' },
+  'nx-users': { title: 'NX employees', breadcrumb: 'NX employees' },
+  receivers: { title: 'Suppliers / receivers', breadcrumb: 'Suppliers / receivers' }
+};
+
+const defaultTabForRole = (role) => (role === 'ADMIN' ? 'nx-users' : 'dispatches');
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('nrgp_token') || '');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState('nx-users');
+  const [activeTab, setActiveTab] = useState('dispatches');
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    const res = await api.login(email, password);
-    const data = await res.json();
-    if (res.ok) {
-      setUser(data.user);
-      setToken(data.token);
-      localStorage.setItem('nrgp_token', data.token);
-      setActiveTab('nx-users');
-    } else {
-      alert(data.error || 'Login failed');
-    }
+  const handleLoginSuccess = (loggedInUser, authToken) => {
+    setUser(loggedInUser);
+    setToken(authToken);
+    localStorage.setItem('nrgp_token', authToken);
+    setActiveTab(defaultTabForRole(loggedInUser.role));
   };
 
   const handleLogout = () => {
@@ -31,27 +33,28 @@ export default function App() {
   };
 
   if (!user) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--navy)' }}>
-        <form onSubmit={handleLogin} style={{ background: '#FFF', padding: '32px', borderRadius: '8px', width: '320px' }}>
-          <h2>NRGP Login</h2>
-          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%', margin: '10px 0', padding: '8px' }} />
-          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%', margin: '10px 0', padding: '8px' }} />
-          <button type="submit" style={{ width: '100%', padding: '10px', background: 'var(--lime)', border: 'none', fontWeight: 'bold' }}>Sign In</button>
-        </form>
-      </div>
-    );
+    return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
- return (
-  <div className="app-shell">
-    <Sidebar user={user} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
-    
-    <div className="main-content">
-      {user.role === 'ADMIN' && activeTab === 'nx-users' && (
-        <AdminEmployees token={token} />
-      )}
+  const meta = TAB_META[activeTab] || { title: 'NRGP', breadcrumb: '' };
+
+  return (
+    <div className="app-shell">
+      <Sidebar user={user} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
+
+      <div className="main-content">
+        <Header title={meta.title} breadcrumb={meta.breadcrumb} />
+
+        {activeTab === 'dispatches' && (user.role === 'ADMIN' || user.role === 'NX' || user.role === 'RECEIVER') && (
+          <DispatchDashboard token={token} />
+        )}
+        {activeTab === 'nx-users' && user.role === 'ADMIN' && (
+          <AdminEmployees token={token} />
+        )}
+        {activeTab === 'receivers' && user.role === 'ADMIN' && (
+          <AdminSuppliers token={token} />
+        )}
+      </div>
     </div>
-  </div>
   );
 }
