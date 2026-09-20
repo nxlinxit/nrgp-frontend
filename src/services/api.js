@@ -59,6 +59,44 @@ export const api = {
     return res.json();
   },
 
+  // Admin Supplier / Receiver Master (company + its login account)
+  getSupplierAccounts: async (token) => {
+    const res = await fetch(`${API_BASE}/admin/receivers`, { headers: getHeaders(token) });
+    return res.json();
+  },
+
+  createSupplierAccount: async (token, supplierData) => {
+    return fetch(`${API_BASE}/admin/receivers`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(supplierData)
+    });
+  },
+
+  updateSupplierAccount: async (token, supplierId, supplierData) => {
+    return fetch(`${API_BASE}/admin/receivers/${supplierId}`, {
+      method: 'PUT',
+      headers: getHeaders(token),
+      body: JSON.stringify(supplierData)
+    });
+  },
+
+  resetSupplierPassword: async (token, supplierId, newPassword) => {
+    return fetch(`${API_BASE}/admin/receivers/${supplierId}/reset-password`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify({ newPassword })
+    });
+  },
+
+  toggleSupplierStatus: async (token, supplierId, active) => {
+    return fetch(`${API_BASE}/admin/receivers/${supplierId}/status`, {
+      method: 'PATCH',
+      headers: getHeaders(token),
+      body: JSON.stringify({ active })
+    });
+  },
+
   // Dispatches
   getDispatches: async (token, { status } = {}) => {
     const query = status ? `?status=${encodeURIComponent(status)}` : '';
