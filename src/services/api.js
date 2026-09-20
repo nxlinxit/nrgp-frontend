@@ -51,5 +51,26 @@ export const api = {
       headers: getHeaders(token),
       body: JSON.stringify({ active })
     });
+  },
+
+  // Receivers directory (for the dispatch creation dropdown)
+  getReceivers: async (token) => {
+    const res = await fetch(`${API_BASE}/receivers`, { headers: getHeaders(token) });
+    return res.json();
+  },
+
+  // Dispatches
+  getDispatches: async (token, { status } = {}) => {
+    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+    const res = await fetch(`${API_BASE}/dispatches${query}`, { headers: getHeaders(token) });
+    return res.json();
+  },
+
+  createDispatch: async (token, dispatchData) => {
+    return fetch(`${API_BASE}/dispatches`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(dispatchData)
+    });
   }
 };
