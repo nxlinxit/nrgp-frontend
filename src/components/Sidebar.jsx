@@ -1,8 +1,30 @@
 import React from 'react';
-import { Truck, Users, Building2, LogOut } from 'lucide-react';
+import { Users, Building2, LogOut, LayoutDashboard, PlusCircle, Clock, AlertTriangle, CheckCircle, Archive, Inbox } from 'lucide-react';
+
+const NAV_ADMIN = [
+  { key: 'nx-users', label: 'NX employees', Icon: Users },
+  { key: 'receivers', label: 'Suppliers / receivers', Icon: Building2 }
+];
+
+const NAV_NX = [
+  { key: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+  { key: 'new-dispatch', label: 'New dispatch', Icon: PlusCircle },
+  { key: 'pending', label: 'Pending with supplier', Icon: Clock },
+  { key: 'disputed', label: 'Disputed', Icon: AlertTriangle },
+  { key: 'resolved', label: 'Resolved', Icon: CheckCircle },
+  { key: 'historical', label: 'Historical data', Icon: Archive }
+];
+
+const NAV_RECEIVER = [
+  { key: 'open', label: 'Open', Icon: Inbox },
+  { key: 'disputed', label: 'Disputed', Icon: AlertTriangle },
+  { key: 'history', label: 'History', Icon: Archive }
+];
+
+const NAV_BY_ROLE = { ADMIN: NAV_ADMIN, NX: NAV_NX, RECEIVER: NAV_RECEIVER };
 
 export default function Sidebar({ user, activeTab, setActiveTab, onLogout }) {
-  const canSeeDispatches = user.role === 'ADMIN' || user.role === 'NX' || user.role === 'RECEIVER';
+  const nav = NAV_BY_ROLE[user.role] || [];
 
   return (
     <div className="sidebar">
@@ -17,22 +39,11 @@ export default function Sidebar({ user, activeTab, setActiveTab, onLogout }) {
 
         <div className="sidebar-divider"></div>
 
-        {canSeeDispatches && (
-          <div className={`nav-item ${activeTab === 'dispatches' ? 'active' : ''}`} onClick={() => setActiveTab('dispatches')}>
-            <Truck className="nav-icon" size={18} /> Dispatches
+        {nav.map(({ key, label, Icon }) => (
+          <div key={key} className={`nav-item ${activeTab === key ? 'active' : ''}`} onClick={() => setActiveTab(key)}>
+            <Icon className="nav-icon" size={18} /> {label}
           </div>
-        )}
-
-        {user.role === 'ADMIN' && (
-          <>
-            <div className={`nav-item ${activeTab === 'nx-users' ? 'active' : ''}`} onClick={() => setActiveTab('nx-users')}>
-              <Users className="nav-icon" size={18} /> NX employees
-            </div>
-            <div className={`nav-item ${activeTab === 'receivers' ? 'active' : ''}`} onClick={() => setActiveTab('receivers')}>
-              <Building2 className="nav-icon" size={18} /> Suppliers / receivers
-            </div>
-          </>
-        )}
+        ))}
       </div>
 
       <div className="sidebar-footer">

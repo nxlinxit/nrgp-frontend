@@ -4,26 +4,37 @@ import Header from './components/Header';
 import Login from './pages/Login';
 import AdminEmployees from './pages/AdminEmployees';
 import AdminSuppliers from './pages/AdminSuppliers';
-import DispatchDashboard from './pages/DispatchDashboard';
+import NxDashboard from './pages/NxDashboard';
+import NxNewDispatch from './pages/NxNewDispatch';
+import DispatchList from './pages/DispatchList';
+import DispatchDetail from './pages/DispatchDetail';
 
 const TAB_META = {
-  dispatches: { title: 'Dispatches', breadcrumb: 'Dispatches' },
-  'nx-users': { title: 'NX employees', breadcrumb: 'NX employees' },
-  receivers: { title: 'Supplier / receiver accounts', breadcrumb: 'Receiver master' }
+  'nx-users': { title: 'NX employee accounts', breadcrumb: 'NX employees' },
+  receivers: { title: 'Supplier / receiver accounts', breadcrumb: 'Receiver master' },
+  dashboard: { title: 'Dispatch dashboard', breadcrumb: 'Dashboard' },
+  'new-dispatch': { title: 'New dispatch entry', breadcrumb: 'New dispatch' },
+  pending: { title: 'Pending with supplier', breadcrumb: 'Pending' },
+  disputed: { title: 'Disputed dispatches', breadcrumb: 'Disputed' },
+  resolved: { title: 'Resolved disputes', breadcrumb: 'Resolved' },
+  historical: { title: 'Historical data', breadcrumb: 'Historical' },
+  open: { title: 'Open dispatches', breadcrumb: 'Open' },
+  history: { title: 'Submission history', breadcrumb: 'History' }
 };
 
-const defaultTabForRole = (role) => (role === 'ADMIN' ? 'nx-users' : 'dispatches');
+const DEFAULT_TAB_BY_ROLE = { ADMIN: 'nx-users', NX: 'dashboard', RECEIVER: 'open' };
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('nrgp_token') || '');
-  const [activeTab, setActiveTab] = useState('dispatches');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeDispatchId, setActiveDispatchId] = useState(null);
 
   const handleLoginSuccess = (loggedInUser, authToken) => {
     setUser(loggedInUser);
     setToken(authToken);
     localStorage.setItem('nrgp_token', authToken);
-    setActiveTab(defaultTabForRole(loggedInUser.role));
+    setActiveTab(DEFAULT_TAB_BY_ROLE[loggedInUser.role] || 'dashboard');
   };
 
   const handleLogout = () => {
@@ -32,28 +43,60 @@ export default function App() {
     localStorage.removeItem('nrgp_token');
   };
 
+  const goToTab = (tab) => {
+    setActiveDispatchId(null);
+    setActiveTab(tab);
+  };
+
   if (!user) {
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
   const meta = TAB_META[activeTab] || { title: 'NRGP', breadcrumb: '' };
 
+  const renderBody = () => {
+    if (activeDispatchId) {
+      return (
+        <DispatchDetail
+          token={token}
+          user={user}
+          dispatchId={activeDispatchId}
+          onBack={() => setActiveDispatchId(null)}
+          onChanged={() => {}}
+        />
+      );
+    }
+
+    if (user.role === 'ADMIN') {
+      if (activeTab === 'nx-users') return <AdminEmployees token={token} />;
+      if (activeTab === 'receivers') return <AdminSuppliers token={token} />;
+    }
+
+    if (user.role === 'NX') {
+      if (activeTab === 'dashboard') return <NxDashboard token={token} onNavigate={goToTab} onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'new-dispatch') return <NxNewDispatch token={token} user={user} onCreated={() => goToTab('dashboard')} />;
+      if (activeTab === 'pending') return <DispatchList token={token} status="pending" title={TAB_META.pending.title} breadcrumb="NX Portal / Pending" emptyMessage="No dispatches currently pending with a supplier." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'disputed') return <DispatchList token={token} status="disputed" title={TAB_META.disputed.title} breadcrumb="NX Portal / Disputed" emptyMessage="All clear — no open disputes right now." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'resolved') return <DispatchList token={token} status="resolved" title={TAB_META.resolved.title} breadcrumb="NX Portal / Resolved" emptyMessage="No resolved disputes yet." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'historical') return <DispatchList token={token} status="confirmed" title={TAB_META.historical.title} breadcrumb="NX Portal / Historical" emptyMessage="No historical (clean) records yet." onOpenDetail={setActiveDispatchId} />;
+    }
+
+    if (user.role === 'RECEIVER') {
+      if (activeTab === 'open') return <DispatchList token={token} status="pending" title={TAB_META.open.title} breadcrumb="Receiver Portal / Open" emptyMessage="Nothing waiting on you right now — new dispatches will appear here." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'disputed') return <DispatchList token={token} status="disputed" title={TAB_META.disputed.title} breadcrumb="Receiver Portal / Disputed" emptyMessage="No open disputes right now." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'history') return <DispatchList token={token} status={null} title={TAB_META.history.title} breadcrumb="Receiver Portal / History" emptyMessage="No dispatches on record yet." onOpenDetail={setActiveDispatchId} />;
+    }
+
+    return null;
+  };
+
   return (
     <div className="app-shell">
-      <Sidebar user={user} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
+      <Sidebar user={user} activeTab={activeTab} setActiveTab={goToTab} onLogout={handleLogout} />
 
       <div className="main-content">
         <Header title={meta.title} breadcrumb={meta.breadcrumb} />
-
-        {activeTab === 'dispatches' && (user.role === 'ADMIN' || user.role === 'NX' || user.role === 'RECEIVER') && (
-          <DispatchDashboard token={token} user={user} />
-        )}
-        {activeTab === 'nx-users' && user.role === 'ADMIN' && (
-          <AdminEmployees token={token} />
-        )}
-        {activeTab === 'receivers' && user.role === 'ADMIN' && (
-          <AdminSuppliers token={token} />
-        )}
+        {renderBody()}
       </div>
     </div>
   );
