@@ -43,12 +43,15 @@ export default function App() {
     );
   }
 
-  return (
-    <div className="app-shell">
-      <Sidebar user={user} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
-      <div className="main-content">
-        {activeTab === 'nx-users' && <AdminEmployees token={token} />}
-      </div>
+ return (
+  <div className="app-shell">
+    <Sidebar user={user} activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />
+    
+    <div className="main-content">
+      {user.role === 'ADMIN' && activeTab === 'nx-users' && (
+        <AdminEmployees token={token} />
+      )}
     </div>
+  </div>
   );
 }
