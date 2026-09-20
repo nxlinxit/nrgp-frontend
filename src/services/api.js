@@ -110,5 +110,26 @@ export const api = {
       headers: getHeaders(token),
       body: JSON.stringify(dispatchData)
     });
+  },
+
+  getDispatch: async (token, id) => {
+    const res = await fetch(`${API_BASE}/dispatches/${id}`, { headers: getHeaders(token) });
+    return res.json();
+  },
+
+  submitReceipt: async (token, id, payload) => {
+    return fetch(`${API_BASE}/dispatches/${id}/receive`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify(payload)
+    });
+  },
+
+  resolveDispute: async (token, id, resolutionNote) => {
+    return fetch(`${API_BASE}/dispatches/${id}/resolve`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify({ resolution_note: resolutionNote })
+    });
   }
 };
