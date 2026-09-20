@@ -26,7 +26,7 @@ export default function App() {
     'BIN-001': 0, 'PAL-001': 0, 'STP-001': 0, 'TRO-001': 0, 'CB-001': 0
   });
 
-  const API_BASE = 'https://nrgp-backend.onrender.com'; // Replace with Render Backend URL after deployment
+  const API_BASE = 'https://nrgp-backend.onrender.com/api'; // Replace with Render Backend URL after deployment
 
   // Handle Shared Login
   const handleLogin = async (e) => {
