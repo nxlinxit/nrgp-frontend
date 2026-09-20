@@ -14,7 +14,7 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem('nrgp_token') || '');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('nx-users');
   const [dispatches, setDispatches] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -44,7 +44,6 @@ export default function App() {
         setToken(data.token);
         localStorage.setItem('nrgp_token', data.token);
 
-        // Set default active tab based on role
         if (data.user.role === 'RECEIVER') {
           setActiveTab('open');
         } else if (data.user.role === 'ADMIN') {
@@ -129,13 +128,13 @@ export default function App() {
     }
   };
 
-  // If not logged in, render Single Shared Login Page
+  // Login Screen
   if (!user) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--navy)' }}>
         <form onSubmit={handleLogin} style={{ background: '#FFF', padding: '40px', borderRadius: '12px', width: '100%', maxWidth: '400px' }}>
-          <h2 style={{ color: 'var(--navy)', marginBottom: '8px' }}>NX Logistics</h2>
-          <p style={{ color: '#64748B', marginBottom: '24px', fontSize: '0.9rem' }}>Non-Returnable Gate Pass Portal</p>
+          <h2 style={{ color: 'var(--navy)', marginBottom: '4px', fontSize: '1.5rem', fontWeight: '700' }}>NRGP</h2>
+          <p style={{ color: '#64748B', marginBottom: '24px', fontSize: '0.85rem' }}>Gate Pass Portal</p>
           
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', fontWeight: '600' }}>Email Address</label>
@@ -171,20 +170,33 @@ export default function App() {
     );
   }
 
-  // Logged-in Portal Shell
   return (
     <div className="app-shell">
-      {/* Sidebar Navigation */}
+      {/* Left Sidebar */}
       <div className="sidebar">
         <div>
           <div className="sidebar-brand">
-            <span style={{ color: 'var(--lime)' }}>NX</span> Logistics
-          </div>
-          <div style={{ fontSize: '0.8rem', color: '#94A3B8', marginBottom: '20px' }}>
-            Logged in as: <strong>{user.name || user.email}</strong> ({user.role})
+            <span className="brand-dot"></span>
+            <div>
+              <div style={{ fontSize: '1.2rem', fontWeight: '700', lineHeight: '1.1' }}>NRGP</div>
+              <div style={{ fontSize: '0.75rem', color: '#8E8EA8', fontWeight: '400' }}>Gate Pass Portal</div>
+            </div>
           </div>
 
-          {/* Navigation Items based on Role */}
+          <div className="sidebar-divider"></div>
+
+          {/* Navigation */}
+          {user.role === 'ADMIN' && (
+            <>
+              <div className={`nav-item ${activeTab === 'nx-users' ? 'active' : ''}`} onClick={() => setActiveTab('nx-users')}>
+                <span className="nav-icon">📄</span> NX employees
+              </div>
+              <div className={`nav-item ${activeTab === 'receivers' ? 'active' : ''}`} onClick={() => setActiveTab('receivers')}>
+                <span className="nav-icon">📄</span> Suppliers / receivers
+              </div>
+            </>
+          )}
+
           {user.role === 'NX' && (
             <>
               <div className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>Dashboard</div>
@@ -203,23 +215,143 @@ export default function App() {
               <div className={`nav-item ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>History</div>
             </>
           )}
-
-          {user.role === 'ADMIN' && (
-            <>
-              <div className={`nav-item ${activeTab === 'nx-users' ? 'active' : ''}`} onClick={() => setActiveTab('nx-users')}>NX Employees</div>
-              <div className={`nav-item ${activeTab === 'receivers' ? 'active' : ''}`} onClick={() => setActiveTab('receivers')}>Suppliers / Receivers</div>
-            </>
-          )}
         </div>
 
-        <button onClick={handleLogout} style={{ background: 'transparent', border: '1px solid #475569', color: '#CBD5E1', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}>
-          Sign Out
-        </button>
+        {/* Sidebar Footer User Card */}
+        <div className="sidebar-footer">
+          <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#FFF' }}>{user.name || 'Portal Admin'}</div>
+          <div style={{ fontSize: '0.8rem', color: '#A0A0C0', marginBottom: '6px' }}>{user.email || 'admin@nipponexpress.co.in'}</div>
+          <div className="role-tag">{user.role === 'ADMIN' ? 'Portal admin' : user.role}</div>
+          
+          <button onClick={handleLogout} className="btn-logout">
+            Log out
+          </button>
+        </div>
       </div>
 
-      {/* Main Workspace Area */}
+      {/* Main Content Workspace */}
       <div className="main-content">
-        {/* NX New Dispatch View */}
+        {/* Admin Section 1: NX Employee Accounts */}
+        {user.role === 'ADMIN' && activeTab === 'nx-users' && (
+          <div>
+            <div className="header-row">
+              <h1 className="page-title">NX employee accounts</h1>
+              <span className="breadcrumb-code">Admin Portal / nx employees</span>
+            </div>
+
+            <div className="sub-header-row">
+              <p className="page-subtitle">NX employee accounts authorized to log dispatches</p>
+              <button className="btn-primary">+ Add NX employee</button>
+            </div>
+
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th>NAME</th>
+                  <th>LOGIN EMAIL</th>
+                  <th>STATUS</th>
+                  <th style={{ textAlign: 'right' }}>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ fontWeight: '500' }}>Guru Supervisor</td>
+                  <td>guru@nipponexpress.co.in</td>
+                  <td><span className="status-pill active">• Active</span></td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div className="action-btn-group">
+                      <button className="btn-action">Edit</button>
+                      <button className="btn-action">Reset password</button>
+                      <button className="btn-action">Deactivate</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: '500' }}>Anita Supervisor</td>
+                  <td>anita@nipponexpress.co.in</td>
+                  <td><span className="status-pill active">• Active</span></td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div className="action-btn-group">
+                      <button className="btn-action">Edit</button>
+                      <button className="btn-action">Reset password</button>
+                      <button className="btn-action">Deactivate</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Admin Section 2: Supplier / Receiver Accounts */}
+        {user.role === 'ADMIN' && activeTab === 'receivers' && (
+          <div>
+            <div className="header-row">
+              <h1 className="page-title">Supplier / receiver accounts</h1>
+              <span className="breadcrumb-code">Admin Portal / receiver master</span>
+            </div>
+
+            <div className="sub-header-row">
+              <p className="page-subtitle">Supplier / receiver accounts used for dispatch notification and portal login</p>
+              <button className="btn-primary">+ Add supplier</button>
+            </div>
+
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th>CODE</th>
+                  <th>NAME</th>
+                  <th>LOGIN EMAIL</th>
+                  <th>ADDRESS</th>
+                  <th style={{ textAlign: 'right' }}>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="code-font">I107</td>
+                  <td style={{ fontWeight: '500' }}>Usui Susira</td>
+                  <td>usui.susira@example-supplier.com</td>
+                  <td>Plot 14, Ind. Area, Chennai</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div className="action-btn-group">
+                      <button className="btn-action">Edit</button>
+                      <button className="btn-action">Reset password</button>
+                      <button className="btn-action">Deactivate</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="code-font">I112</td>
+                  <td style={{ fontWeight: '500' }}>Meesho Fulfillment Hub</td>
+                  <td>ops@meesho-fc.example.com</td>
+                  <td>Zepto Rd, Pune MIDC</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div className="action-btn-group">
+                      <button className="btn-action">Edit</button>
+                      <button className="btn-action">Reset password</button>
+                      <button className="btn-action">Deactivate</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="code-font">I098</td>
+                  <td style={{ fontWeight: '500' }}>Amazon FC Bhiwandi</td>
+                  <td>inbound@amzn-fc.example.com</td>
+                  <td>Bhiwandi, Thane</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <div className="action-btn-group">
+                      <button className="btn-action">Edit</button>
+                      <button className="btn-action">Reset password</button>
+                      <button className="btn-action">Deactivate</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* NX New Dispatch Form */}
         {user.role === 'NX' && activeTab === 'new' && (
           <div style={{ background: '#FFF', padding: '24px', borderRadius: '8px', maxWidth: '800px' }}>
             <h2 style={{ marginBottom: '20px' }}>Log New Dispatch</h2>
@@ -261,58 +393,19 @@ export default function App() {
           </div>
         )}
 
-        {/* ADMIN Views: User Directory Tables */}
-        {user.role === 'ADMIN' && (activeTab === 'nx-users' || activeTab === 'receivers') && (
-          <div>
-            <h2 style={{ marginBottom: '20px' }}>
-              {activeTab === 'nx-users' ? 'NX Employee Directory' : 'Supplier / Receiver Directory'}
-            </h2>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>User ID</th>
-                  <th>Full Name</th>
-                  <th>Email Address</th>
-                  <th>Role</th>
-                  <th>Account Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activeTab === 'nx-users' ? (
-                  <tr>
-                    <td className="code-font">USR-001</td>
-                    <td>Sumedh (NX Employee)</td>
-                    <td>sumedh@nipponexpress.com</td>
-                    <td><span className="badge pending">NX</span></td>
-                    <td><span className="badge confirmed">Active</span></td>
-                  </tr>
-                ) : (
-                  <tr>
-                    <td className="code-font">RCV-001</td>
-                    <td>Supplier / Receiver Account</td>
-                    <td>receiver@supplier.com</td>
-                    <td><span className="badge resolved">RECEIVER</span></td>
-                    <td><span className="badge confirmed">Active</span></td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Dispatch Data Table View (For Non-Admin Tabs) */}
+        {/* Dispatch Data Table View for Non-Admin */}
         {user.role !== 'ADMIN' && activeTab !== 'new' && (
           <div>
             <h2 style={{ marginBottom: '20px', textTransform: 'capitalize' }}>{activeTab} Dispatches</h2>
-            <table className="data-table">
+            <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Transaction ID</th>
-                  <th>Receiver</th>
-                  <th>Vehicle No</th>
-                  <th>Warehouse PIC</th>
-                  <th>Submitted At (System)</th>
-                  <th>Status</th>
+                  <th>TRANSACTION ID</th>
+                  <th>RECEIVER</th>
+                  <th>VEHICLE NO</th>
+                  <th>WAREHOUSE PIC</th>
+                  <th>SUBMITTED AT</th>
+                  <th>STATUS</th>
                 </tr>
               </thead>
               <tbody>
@@ -321,12 +414,12 @@ export default function App() {
                 ) : (
                   dispatches.map(d => (
                     <tr key={d.id}>
-                      <td data-label="Transaction ID" className="code-font">{d.transaction_id}</td>
-                      <td data-label="Receiver">{d.receiver_name}</td>
-                      <td data-label="Vehicle No">{d.vehicle_no}</td>
-                      <td data-label="Warehouse PIC">{d.warehouse_pic}</td>
-                      <td data-label="Submitted At" className="code-font">{new Date(d.dispatch_submitted_at).toLocaleString()}</td>
-                      <td data-label="Status"><span className={`badge ${d.status}`}>{d.status}</span></td>
+                      <td className="code-font">{d.transaction_id}</td>
+                      <td>{d.receiver_name}</td>
+                      <td>{d.vehicle_no}</td>
+                      <td>{d.warehouse_pic}</td>
+                      <td className="code-font">{new Date(d.dispatch_submitted_at).toLocaleString()}</td>
+                      <td><span className="status-pill active">{d.status}</span></td>
                     </tr>
                   ))
                 )}
