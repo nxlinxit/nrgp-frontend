@@ -34,7 +34,7 @@ export default function Login({ onLoginSuccess }) {
       <div className="login-card">
         <div className="login-header">
           <div className="brand-badge">NRGP</div>
-          <h2>Gate Pass Portal</h2>
+          <h2>Non-Returnable Gate Pass</h2>
           <p>Enter your credentials to sign in to your account</p>
         </div>
 
