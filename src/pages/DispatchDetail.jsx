@@ -138,9 +138,9 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
         <span className={`dispatch-status ${dispatch.status}`}>{dispatch.status.replace('_', ' ')}</span>
       </div>
 
-      <div className="panel" style={{ background: '#FFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px 24px', margin: '16px 0' }}>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '12px' }}>{dispatch.receiver_name} ({dispatch.receiver_code})</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '0.9rem' }}>
+      <div className="panel">
+        <p className="sub" style={{ marginBottom: '12px' }}>{dispatch.receiver_name} ({dispatch.receiver_code})</p>
+        <div className="detail-grid">
           <div><b>Dispatch date &amp; time</b><br />{formatDateTime(dispatch.dispatch_date_time)}</div>
           <div>
             <b>Receiving date &amp; time</b><br />
@@ -155,9 +155,9 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
         </div>
       </div>
 
-      <div className="panel" style={{ background: '#FFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px 24px', margin: '16px 0' }}>
-        <h3 style={{ marginBottom: '4px' }}>{editable ? 'Confirm received quantity' : 'Package summary'}</h3>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
+      <div className="panel">
+        <h3>{editable ? 'Confirm received quantity' : 'Package summary'}</h3>
+        <p className="sub">
           {editable ? 'Dispatched quantity is fixed. Enter what you received — confirmation is set automatically from the quantity match.' : 'This dispatch has already been submitted.'}
         </p>
         <table className="custom-table">
@@ -222,7 +222,7 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
       </div>
 
       {dispatch.status === 'resolved' && dispatch.resolution_note && (
-        <div className="panel" style={{ background: '#FFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px 24px', margin: '16px 0' }}>
+        <div className="panel">
           <h3>Resolution note</h3>
           <p style={{ color: 'var(--text-dark)' }}>{dispatch.resolution_note}</p>
         </div>
@@ -237,9 +237,9 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
       )}
 
       {canResolve && (
-        <div className="panel" style={{ background: '#FFF', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px 24px', margin: '16px 0' }}>
+        <div className="panel">
           <h3>Resolve dispute</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '12px' }}>
+          <p className="sub">
             Add a resolution note — this closes the dispute and moves it into the receiver's history.
           </p>
           <form onSubmit={handleResolve}>
