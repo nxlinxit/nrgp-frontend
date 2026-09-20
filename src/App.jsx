@@ -9,7 +9,7 @@ import DispatchDashboard from './pages/DispatchDashboard';
 const TAB_META = {
   dispatches: { title: 'Dispatches', breadcrumb: 'Dispatches' },
   'nx-users': { title: 'NX employees', breadcrumb: 'NX employees' },
-  receivers: { title: 'Suppliers / receivers', breadcrumb: 'Suppliers / receivers' }
+  receivers: { title: 'Supplier / receiver accounts', breadcrumb: 'Receiver master' }
 };
 
 const defaultTabForRole = (role) => (role === 'ADMIN' ? 'nx-users' : 'dispatches');
