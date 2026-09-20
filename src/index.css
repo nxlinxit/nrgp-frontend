@@ -311,14 +311,29 @@ body {
   color: #B45309;
 }
 
-.dispatch-status.in_transit {
-  background-color: #DBEAFE;
-  color: #1D4ED8;
+.dispatch-status.disputed,
+.dispatch-status.Disputed {
+  background-color: #FEE2E2;
+  color: #B91C1C;
 }
 
-.dispatch-status.completed {
+.dispatch-status.resolved {
+  background-color: #EDE9FE;
+  color: #6D28D9;
+}
+
+.dispatch-status.confirmed,
+.dispatch-status.Accepted {
   background-color: #DCFCE7;
   color: #15803D;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.clickable-row:hover {
+  background-color: #F8FAFC;
 }
 
 /* MODALS */

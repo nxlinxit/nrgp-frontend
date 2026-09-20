@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { PKG_TYPES } from '../constants/packageTypes';
+import DispatchDetail from './DispatchDetail';
 
-const STATUS_TABS = ['ALL', 'pending', 'in_transit', 'completed'];
-
-const PKG_TYPES = [
-  { code: 'BIN-001', label: 'Bin' },
-  { code: 'PAL-001', label: 'Pallet' },
-  { code: 'STP-001', label: 'Steel pallet' },
-  { code: 'TRO-001', label: 'Trolley' },
-  { code: 'CB-001', label: 'Carton box' }
-];
+const STATUS_TABS = ['ALL', 'pending', 'disputed', 'resolved', 'confirmed'];
+const STATUS_LABELS = { ALL: 'All', pending: 'Pending', disputed: 'Disputed', resolved: 'Resolved', confirmed: 'Historical' };
 
 const emptyQuantities = () => Object.fromEntries(PKG_TYPES.map((p) => [p.code, 0]));
 
@@ -20,6 +15,7 @@ export default function DispatchDashboard({ token, user }) {
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [activeDispatchId, setActiveDispatchId] = useState(null);
 
   // New Dispatch Form State
   const [receiverId, setReceiverId] = useState('');
@@ -106,6 +102,18 @@ export default function DispatchDashboard({ token, user }) {
     }
   };
 
+  if (activeDispatchId) {
+    return (
+      <DispatchDetail
+        token={token}
+        user={user}
+        dispatchId={activeDispatchId}
+        onBack={() => setActiveDispatchId(null)}
+        onChanged={loadDispatches}
+      />
+    );
+  }
+
   return (
     <div>
       <div className="header-row">
@@ -121,11 +129,13 @@ export default function DispatchDashboard({ token, user }) {
               className={`tab-btn ${activeFilter === tab ? 'active' : ''}`}
               onClick={() => setActiveFilter(tab)}
             >
-              {tab === 'ALL' ? 'All' : tab.replace('_', ' ')}
+              {STATUS_LABELS[tab]}
             </button>
           ))}
         </div>
-        <button className="btn-primary" onClick={openCreateModal}>+ New Dispatch</button>
+        {(user.role === 'NX' || user.role === 'ADMIN') && (
+          <button className="btn-primary" onClick={openCreateModal}>+ New Dispatch</button>
+        )}
       </div>
 
       <table className="custom-table">
@@ -146,7 +156,7 @@ export default function DispatchDashboard({ token, user }) {
             <tr><td colSpan="6" style={{ textAlign: 'center' }}>No dispatches found.</td></tr>
           ) : (
             dispatches.map((disp) => (
-              <tr key={disp.id}>
+              <tr key={disp.id} className="clickable-row" onClick={() => setActiveDispatchId(disp.id)}>
                 <td style={{ fontWeight: '700', color: 'var(--navy)' }}>{disp.transaction_id}</td>
                 <td>{disp.receiver_name}</td>
                 <td>{disp.vehicle_no || 'N/A'}</td>
