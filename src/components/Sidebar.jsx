@@ -33,7 +33,7 @@ export default function Sidebar({ user, activeTab, setActiveTab, onLogout }) {
           <span className="brand-dot"></span>
           <div>
             <div style={{ fontSize: '1.2rem', fontWeight: '700', lineHeight: '1.1' }}>NRGP</div>
-            <div style={{ fontSize: '0.75rem', color: '#8E8EA8' }}>Gate Pass Portal</div>
+            <div style={{ fontSize: '0.75rem', color: '#8E8EA8' }}>Non-Returnable Gate Pass</div>
           </div>
         </div>
 
