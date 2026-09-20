@@ -26,7 +26,7 @@ export default function App() {
     'BIN-001': 0, 'PAL-001': 0, 'STP-001': 0, 'TRO-001': 0, 'CB-001': 0
   });
 
-  const API_BASE = 'https://nrgp-backend.onrender.com/api'; // Replace with Render Backend URL after deployment
+  const API_BASE = 'https://nrgp-backend.onrender.com/api';
 
   // Handle Shared Login
   const handleLogin = async (e) => {
@@ -43,7 +43,15 @@ export default function App() {
         setUser(data.user);
         setToken(data.token);
         localStorage.setItem('nrgp_token', data.token);
-        setActiveTab(data.user.role === 'RECEIVER' ? 'open' : 'dashboard');
+
+        // Set default active tab based on role
+        if (data.user.role === 'RECEIVER') {
+          setActiveTab('open');
+        } else if (data.user.role === 'ADMIN') {
+          setActiveTab('nx-users');
+        } else {
+          setActiveTab('dashboard');
+        }
       } else {
         alert(data.error || 'Login failed');
       }
@@ -253,8 +261,47 @@ export default function App() {
           </div>
         )}
 
-        {/* Dispatch Data Table View */}
-        {activeTab !== 'new' && (
+        {/* ADMIN Views: User Directory Tables */}
+        {user.role === 'ADMIN' && (activeTab === 'nx-users' || activeTab === 'receivers') && (
+          <div>
+            <h2 style={{ marginBottom: '20px' }}>
+              {activeTab === 'nx-users' ? 'NX Employee Directory' : 'Supplier / Receiver Directory'}
+            </h2>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>Full Name</th>
+                  <th>Email Address</th>
+                  <th>Role</th>
+                  <th>Account Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeTab === 'nx-users' ? (
+                  <tr>
+                    <td className="code-font">USR-001</td>
+                    <td>Sumedh (NX Employee)</td>
+                    <td>sumedh@nipponexpress.com</td>
+                    <td><span className="badge pending">NX</span></td>
+                    <td><span className="badge confirmed">Active</span></td>
+                  </tr>
+                ) : (
+                  <tr>
+                    <td className="code-font">RCV-001</td>
+                    <td>Supplier / Receiver Account</td>
+                    <td>receiver@supplier.com</td>
+                    <td><span className="badge resolved">RECEIVER</span></td>
+                    <td><span className="badge confirmed">Active</span></td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Dispatch Data Table View (For Non-Admin Tabs) */}
+        {user.role !== 'ADMIN' && activeTab !== 'new' && (
           <div>
             <h2 style={{ marginBottom: '20px', textTransform: 'capitalize' }}>{activeTab} Dispatches</h2>
             <table className="data-table">
