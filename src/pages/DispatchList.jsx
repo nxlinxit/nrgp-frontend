@@ -4,6 +4,13 @@ import { downloadCsv } from '../utils/csv';
 
 const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '—');
 
+const toLocalDateStr = (value) => {
+  if (!value) return '';
+  const d = new Date(value);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
 export default function DispatchList({ token, status, title, breadcrumb, emptyMessage, onOpenDetail }) {
   const [dispatches, setDispatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +54,7 @@ export default function DispatchList({ token, status, title, breadcrumb, emptyMe
       if (supplierFilter && d.receiver_name !== supplierFilter) return false;
 
       if (dateFrom || dateTo) {
-        const dispatchDate = d.dispatch_date_time ? d.dispatch_date_time.slice(0, 10) : '';
+        const dispatchDate = toLocalDateStr(d.dispatch_date_time);
         if (dateFrom && dispatchDate < dateFrom) return false;
         if (dateTo && dispatchDate > dateTo) return false;
       }
