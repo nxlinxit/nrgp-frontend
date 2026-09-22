@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 
-export default function NxDashboard({ token, onNavigate, onOpenDetail }) {
+export default function NxDashboard({ token, user, onNavigate, onOpenDetail }) {
   const [dispatches, setDispatches] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +33,7 @@ export default function NxDashboard({ token, onNavigate, onOpenDetail }) {
     <div>
       <div className="header-row">
         <h1 className="page-title">Dispatch dashboard</h1>
-        <span className="breadcrumb-code">NX Portal / Dashboard</span>
+        <span className="breadcrumb-code">{user?.role === 'ADMIN' ? 'Admin Portal' : 'NX Portal'} / Dashboard</span>
       </div>
 
       <div className="stat-row" style={{ marginTop: '16px' }}>

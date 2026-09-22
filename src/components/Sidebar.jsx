@@ -1,11 +1,6 @@
 import React from 'react';
 import { Users, Building2, LogOut, LayoutDashboard, PlusCircle, Clock, AlertTriangle, CheckCircle, Archive, Inbox } from 'lucide-react';
 
-const NAV_ADMIN = [
-  { key: 'nx-users', label: 'NX employees', Icon: Users },
-  { key: 'receivers', label: 'Suppliers / receivers', Icon: Building2 }
-];
-
 const NAV_NX = [
   { key: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { key: 'new-dispatch', label: 'New dispatch', Icon: PlusCircle },
@@ -13,6 +8,12 @@ const NAV_NX = [
   { key: 'disputed', label: 'Disputed', Icon: AlertTriangle },
   { key: 'resolved', label: 'Resolved', Icon: CheckCircle },
   { key: 'historical', label: 'Historical data', Icon: Archive }
+];
+
+const NAV_ADMIN = [
+  ...NAV_NX,
+  { key: 'nx-users', label: 'NX employees', Icon: Users },
+  { key: 'receivers', label: 'Suppliers / receivers', Icon: Building2 }
 ];
 
 const NAV_RECEIVER = [
