@@ -72,13 +72,14 @@ export default function App() {
       if (activeTab === 'receivers') return <AdminSuppliers token={token} />;
     }
 
-    if (user.role === 'NX') {
-      if (activeTab === 'dashboard') return <NxDashboard token={token} onNavigate={goToTab} onOpenDetail={setActiveDispatchId} />;
+    if (user.role === 'NX' || user.role === 'ADMIN') {
+      const portalLabel = user.role === 'ADMIN' ? 'Admin Portal' : 'NX Portal';
+      if (activeTab === 'dashboard') return <NxDashboard token={token} user={user} onNavigate={goToTab} onOpenDetail={setActiveDispatchId} />;
       if (activeTab === 'new-dispatch') return <NxNewDispatch token={token} user={user} onCreated={() => goToTab('dashboard')} />;
-      if (activeTab === 'pending') return <DispatchList token={token} status="pending" title={TAB_META.pending.title} breadcrumb="NX Portal / Pending" emptyMessage="No dispatches currently pending with a supplier." onOpenDetail={setActiveDispatchId} />;
-      if (activeTab === 'disputed') return <DispatchList token={token} status="disputed" title={TAB_META.disputed.title} breadcrumb="NX Portal / Disputed" emptyMessage="All clear — no open disputes right now." onOpenDetail={setActiveDispatchId} />;
-      if (activeTab === 'resolved') return <DispatchList token={token} status="resolved" title={TAB_META.resolved.title} breadcrumb="NX Portal / Resolved" emptyMessage="No resolved disputes yet." onOpenDetail={setActiveDispatchId} />;
-      if (activeTab === 'historical') return <DispatchList token={token} status="confirmed" title={TAB_META.historical.title} breadcrumb="NX Portal / Historical" emptyMessage="No historical (clean) records yet." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'pending') return <DispatchList token={token} status="pending" title={TAB_META.pending.title} breadcrumb={`${portalLabel} / Pending`} emptyMessage="No dispatches currently pending with a supplier." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'disputed') return <DispatchList token={token} status="disputed" title={TAB_META.disputed.title} breadcrumb={`${portalLabel} / Disputed`} emptyMessage="All clear — no open disputes right now." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'resolved') return <DispatchList token={token} status="resolved" title={TAB_META.resolved.title} breadcrumb={`${portalLabel} / Resolved`} emptyMessage="No resolved disputes yet." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'historical') return <DispatchList token={token} status="confirmed" title={TAB_META.historical.title} breadcrumb={`${portalLabel} / Historical`} emptyMessage="No historical (clean) records yet." onOpenDetail={setActiveDispatchId} />;
     }
 
     if (user.role === 'RECEIVER') {

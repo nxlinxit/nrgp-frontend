@@ -76,7 +76,7 @@ export default function NxNewDispatch({ token, user, onCreated }) {
     <div>
       <div className="header-row">
         <h1 className="page-title">New dispatch entry</h1>
-        <span className="breadcrumb-code">NX Portal / New dispatch</span>
+        <span className="breadcrumb-code">{user?.role === 'ADMIN' ? 'Admin Portal' : 'NX Portal'} / New dispatch</span>
       </div>
 
       <form onSubmit={handleSubmit}>
