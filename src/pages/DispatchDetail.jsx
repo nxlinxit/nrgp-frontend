@@ -176,7 +176,10 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
               const diff = l.received_qty === null || l.received_qty === undefined ? null : l.received_qty - l.dispatched_qty;
               return (
                 <tr key={l.id}>
-                  <td>{getPackageLabel(l.package_code)}</td>
+                  <td>
+                    {getPackageLabel(l.package_code)}
+                    {l.description && <span style={{ color: 'var(--text-muted)' }}> — {l.description}</span>}
+                  </td>
                   <td>{l.dispatched_qty}</td>
                   <td>
                     {editable ? (
