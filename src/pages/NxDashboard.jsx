@@ -33,7 +33,7 @@ export default function NxDashboard({ token, user, onNavigate, onOpenDetail }) {
     <div>
       <div className="header-row">
         <h1 className="page-title">Dispatch dashboard</h1>
-        <span className="breadcrumb-code">{user?.role === 'ADMIN' ? 'Admin Portal' : 'NX Portal'} / Dashboard</span>
+        <span className="breadcrumb-code">{user?.role === 'ADMIN' ? 'Admin Portal' : user?.role === 'RECEIVER' ? 'Supplier Portal' : 'NX Portal'} / Dashboard</span>
       </div>
 
       <div className="stat-row" style={{ marginTop: '16px' }}>
@@ -57,14 +57,16 @@ export default function NxDashboard({ token, user, onNavigate, onOpenDetail }) {
 
       <div className="sub-header-row">
         <p className="page-subtitle">Recent activity — click a card above for the full segregated list</p>
-        <button className="btn-primary" onClick={() => onNavigate('new-dispatch')}>+ New dispatch</button>
+        {user?.role !== 'RECEIVER' && (
+          <button className="btn-primary" onClick={() => onNavigate('new-dispatch')}>+ New dispatch</button>
+        )}
       </div>
 
       <table className="custom-table">
         <thead>
           <tr>
             <th>TRANSACTION ID</th>
-            <th>RECEIVER</th>
+            <th>SUPPLIER</th>
             <th>VEHICLE</th>
             <th>DISPATCH DATE</th>
             <th>STATUS</th>
