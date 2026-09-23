@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import BulkUploadModal from '../components/BulkUploadModal';
 
 export default function AdminEmployees({ token }) {
   const [employees, setEmployees] = useState([]);
@@ -8,6 +9,7 @@ export default function AdminEmployees({ token }) {
   // Modals state
   const [showFormModal, setShowFormModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
   const [selectedEmp, setSelectedEmp] = useState(null);
 
   // Form State
@@ -112,7 +114,10 @@ export default function AdminEmployees({ token }) {
 
       <div className="sub-header-row">
         <p className="page-subtitle">NX employee accounts authorized to log dispatches and access admin functions</p>
-        <button className="btn-primary" onClick={openAddModal}>+ Add NX employee</button>
+        <div className="action-btn-group">
+          <button className="btn-action" onClick={() => setShowBulkModal(true)}>Bulk upload</button>
+          <button className="btn-primary" onClick={openAddModal}>+ Add NX employee</button>
+        </div>
       </div>
 
       <table className="custom-table">
@@ -184,6 +189,22 @@ export default function AdminEmployees({ token }) {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal: Bulk Upload */}
+      {showBulkModal && (
+        <BulkUploadModal
+          title="Bulk upload NX employees"
+          sampleFilename="nx-employees-sample.csv"
+          sampleHeaders={['name', 'email', 'role', 'phone']}
+          sampleRows={[
+            ['John Doe', 'john.doe@nipponexpress.com', 'NX', '9900011122'],
+            ['Jane Admin', 'jane.admin@nipponexpress.com', 'ADMIN', '9900033344']
+          ]}
+          onUpload={(records) => api.bulkCreateUsers(token, records)}
+          onClose={() => setShowBulkModal(false)}
+          onDone={loadEmployees}
+        />
       )}
 
       {/* Modal: Reset Password */}
