@@ -13,7 +13,7 @@ const NAV_NX = [
 const NAV_ADMIN = [
   ...NAV_NX,
   { key: 'nx-users', label: 'NX employees', Icon: Users },
-  { key: 'receivers', label: 'Suppliers / receivers', Icon: Building2 }
+  { key: 'receivers', label: 'Suppliers', Icon: Building2 }
 ];
 
 const NAV_RECEIVER = [

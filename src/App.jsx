@@ -11,7 +11,7 @@ import DispatchDetail from './pages/DispatchDetail';
 
 const TAB_META = {
   'nx-users': { title: 'NX employee accounts', breadcrumb: 'NX employees' },
-  receivers: { title: 'Supplier / receiver accounts', breadcrumb: 'Receiver master' },
+  receivers: { title: 'Supplier accounts', breadcrumb: 'Supplier master' },
   dashboard: { title: 'Dispatch dashboard', breadcrumb: 'Dashboard' },
   'new-dispatch': { title: 'New dispatch entry', breadcrumb: 'New dispatch' },
   pending: { title: 'Pending with supplier', breadcrumb: 'Pending' },
@@ -79,7 +79,7 @@ export default function App() {
       if (activeTab === 'pending') return <DispatchList token={token} status="pending" title={TAB_META.pending.title} breadcrumb={`${portalLabel} / Pending`} emptyMessage="No dispatches currently pending with a supplier." onOpenDetail={setActiveDispatchId} />;
       if (activeTab === 'disputed') return <DispatchList token={token} status="disputed" title={TAB_META.disputed.title} breadcrumb={`${portalLabel} / Disputed`} emptyMessage="All clear — no open disputes right now." onOpenDetail={setActiveDispatchId} />;
       if (activeTab === 'resolved') return <DispatchList token={token} status="resolved" title={TAB_META.resolved.title} breadcrumb={`${portalLabel} / Resolved`} emptyMessage="No resolved disputes yet." onOpenDetail={setActiveDispatchId} />;
-      if (activeTab === 'historical') return <DispatchList token={token} status="confirmed" title={TAB_META.historical.title} breadcrumb={`${portalLabel} / Historical`} emptyMessage="No historical (clean) records yet." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'historical') return <DispatchList token={token} status={null} title={TAB_META.historical.title} breadcrumb={`${portalLabel} / Historical`} emptyMessage="No historical records yet." onOpenDetail={setActiveDispatchId} />;
     }
 
     if (user.role === 'RECEIVER') {

@@ -30,11 +30,21 @@ export default function NxNewDispatch({ token, user, onCreated }) {
   }, [token]);
 
   const handleQuantityChange = (code, value) => {
-    setQuantities((prev) => ({ ...prev, [code]: value }));
+    const qty = Math.max(0, Number(value) || 0);
+    setQuantities((prev) => ({ ...prev, [code]: qty }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!receiverId) {
+      alert('Select a supplier before submitting.');
+      return;
+    }
+    if (!vehicleNo.trim()) {
+      alert('Vehicle no. is required.');
+      return;
+    }
 
     const lines = PKG_TYPES
       .map((p) => ({ package_code: p.code, dispatched_qty: Number(quantities[p.code]) || 0 }))
@@ -85,17 +95,17 @@ export default function NxNewDispatch({ token, user, onCreated }) {
           <p className="sub">Transaction ID is generated automatically on submit.</p>
           <div className="detail-grid">
             <div className="form-field">
-              <label>Supplier / receiver</label>
+              <label>Supplier <span style={{ color: '#DC2626' }}>*</span></label>
               <select required value={receiverId} onChange={(e) => setReceiverId(e.target.value)} className="form-select">
-                <option value="" disabled>Select a receiver</option>
+                <option value="" disabled>Select a supplier</option>
                 {receivers.map((r) => (
                   <option key={r.id} value={r.id}>{r.name} — {r.code}</option>
                 ))}
               </select>
             </div>
             <div className="form-field">
-              <label>Vehicle no.</label>
-              <input value={vehicleNo} onChange={(e) => setVehicleNo(e.target.value)} placeholder="e.g. TN10BE8750" />
+              <label>Vehicle no. <span style={{ color: '#DC2626' }}>*</span></label>
+              <input required value={vehicleNo} onChange={(e) => setVehicleNo(e.target.value)} placeholder="e.g. TN10BE8750" />
             </div>
             <div className="form-field">
               <label>Driver details <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
@@ -104,7 +114,7 @@ export default function NxNewDispatch({ token, user, onCreated }) {
             <div className="form-field">
               <label>Warehouse PIC</label>
               <div style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', background: '#F8FAFC', color: 'var(--text-muted)' }}>
-                {user?.name || 'NX Dispatch Staff'} <span style={{ fontSize: '0.75rem' }}>(auto-fetched from your login)</span>
+                {user?.name || 'NX Dispatch Staff'}
               </div>
             </div>
           </div>
@@ -139,8 +149,8 @@ export default function NxNewDispatch({ token, user, onCreated }) {
           </table>
         </div>
 
-        <button type="submit" className="btn-primary" disabled={saving || !receiverId}>
-          {saving ? 'Submitting...' : 'Submit & notify receiver'}
+        <button type="submit" className="btn-primary" disabled={saving || !receiverId || !vehicleNo.trim()}>
+          {saving ? 'Submitting...' : 'Submit & notify supplier'}
         </button>
       </form>
     </div>

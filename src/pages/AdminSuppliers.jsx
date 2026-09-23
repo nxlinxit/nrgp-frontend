@@ -108,12 +108,12 @@ export default function AdminSuppliers({ token }) {
   return (
     <div>
       <div className="header-row">
-        <h1 className="page-title">Supplier / receiver accounts</h1>
-        <span className="breadcrumb-code">Admin Portal / receiver master</span>
+        <h1 className="page-title">Supplier accounts</h1>
+        <span className="breadcrumb-code">Admin Portal / Supplier master</span>
       </div>
 
       <div className="sub-header-row">
-        <p className="page-subtitle">Supplier / receiver accounts used for dispatch notification and portal login</p>
+        <p className="page-subtitle">Supplier accounts used for dispatch notification and portal login</p>
         <button className="btn-primary" onClick={openAddModal}>+ Add supplier</button>
       </div>
 
