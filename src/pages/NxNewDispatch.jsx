@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { PKG_TYPES } from '../constants/packageTypes';
 
 const emptyQuantities = () => Object.fromEntries(PKG_TYPES.map((p) => [p.code, 0]));
+const emptyDescriptions = () => Object.fromEntries(PKG_TYPES.filter((p) => p.hasDescription).map((p) => [p.code, '']));
 
 export default function NxNewDispatch({ token, user, onCreated }) {
   const [receivers, setReceivers] = useState([]);
@@ -10,6 +11,7 @@ export default function NxNewDispatch({ token, user, onCreated }) {
   const [vehicleNo, setVehicleNo] = useState('');
   const [driverDetails, setDriverDetails] = useState('');
   const [quantities, setQuantities] = useState(emptyQuantities());
+  const [descriptions, setDescriptions] = useState(emptyDescriptions());
   const [saving, setSaving] = useState(false);
 
   const loadReceivers = async () => {
@@ -34,6 +36,10 @@ export default function NxNewDispatch({ token, user, onCreated }) {
     setQuantities((prev) => ({ ...prev, [code]: qty }));
   };
 
+  const handleDescriptionChange = (code, value) => {
+    setDescriptions((prev) => ({ ...prev, [code]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -47,11 +53,21 @@ export default function NxNewDispatch({ token, user, onCreated }) {
     }
 
     const lines = PKG_TYPES
-      .map((p) => ({ package_code: p.code, dispatched_qty: Number(quantities[p.code]) || 0 }))
+      .map((p) => ({
+        package_code: p.code,
+        dispatched_qty: Number(quantities[p.code]) || 0,
+        description: p.hasDescription ? descriptions[p.code].trim() : undefined
+      }))
       .filter((line) => line.dispatched_qty > 0);
 
     if (lines.length === 0) {
       alert('Enter a quantity greater than zero for at least one package type.');
+      return;
+    }
+
+    const missingDescription = lines.find((line) => line.description !== undefined && !line.description);
+    if (missingDescription) {
+      alert('Specify what the "Others" item is before submitting.');
       return;
     }
 
@@ -127,6 +143,7 @@ export default function NxNewDispatch({ token, user, onCreated }) {
             <thead>
               <tr>
                 <th>PACKAGE TYPE</th>
+                <th>DESCRIPTION</th>
                 <th style={{ textAlign: 'right' }}>DISPATCHED QTY</th>
               </tr>
             </thead>
@@ -134,6 +151,19 @@ export default function NxNewDispatch({ token, user, onCreated }) {
               {PKG_TYPES.map((p) => (
                 <tr key={p.code}>
                   <td>{p.label} <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>({p.code})</span></td>
+                  <td>
+                    {p.hasDescription ? (
+                      <input
+                        type="text"
+                        placeholder="Specify item"
+                        value={descriptions[p.code]}
+                        onChange={(e) => handleDescriptionChange(p.code, e.target.value)}
+                        style={{ width: '100%', padding: '6px 8px', border: '1px solid var(--border-color)', borderRadius: '6px' }}
+                      />
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)' }}>—</span>
+                    )}
+                  </td>
                   <td style={{ textAlign: 'right' }}>
                     <input
                       type="number"
