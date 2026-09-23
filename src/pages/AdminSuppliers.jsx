@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import BulkUploadModal from '../components/BulkUploadModal';
 
 export default function AdminSuppliers({ token }) {
   const [suppliers, setSuppliers] = useState([]);
@@ -8,6 +9,7 @@ export default function AdminSuppliers({ token }) {
   // Modals
   const [showFormModal, setShowFormModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
 
   // Form Fields
@@ -114,7 +116,10 @@ export default function AdminSuppliers({ token }) {
 
       <div className="sub-header-row">
         <p className="page-subtitle">Supplier accounts used for dispatch notification and portal login</p>
-        <button className="btn-primary" onClick={openAddModal}>+ Add supplier</button>
+        <div className="action-btn-group">
+          <button className="btn-action" onClick={() => setShowBulkModal(true)}>Bulk upload</button>
+          <button className="btn-primary" onClick={openAddModal}>+ Add supplier</button>
+        </div>
       </div>
 
       <table className="custom-table">
@@ -183,6 +188,22 @@ export default function AdminSuppliers({ token }) {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal: Bulk Upload */}
+      {showBulkModal && (
+        <BulkUploadModal
+          title="Bulk upload suppliers"
+          sampleFilename="suppliers-sample.csv"
+          sampleHeaders={['code', 'name', 'email', 'address']}
+          sampleRows={[
+            ['SUP-101', 'Bosch Ltd', 'gatepass@boschltd.com', 'Plot 12, Whitefield Industrial Area, Bengaluru'],
+            ['SUP-102', 'Denso India', 'dispatch@denso.co.in', 'Sonepat Industrial Estate, Haryana']
+          ]}
+          onUpload={(records) => api.bulkCreateSuppliers(token, records)}
+          onClose={() => setShowBulkModal(false)}
+          onDone={loadSuppliers}
+        />
       )}
 
       {/* Modal: Reset Password */}

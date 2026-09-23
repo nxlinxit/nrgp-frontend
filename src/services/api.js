@@ -53,6 +53,15 @@ export const api = {
     });
   },
 
+  bulkCreateUsers: async (token, rows) => {
+    const res = await fetch(`${API_BASE}/admin/users/bulk`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify({ rows })
+    });
+    return res.json();
+  },
+
   // Receivers directory (for the dispatch creation dropdown)
   getReceivers: async (token) => {
     const res = await fetch(`${API_BASE}/receivers`, { headers: getHeaders(token) });
@@ -95,6 +104,15 @@ export const api = {
       headers: getHeaders(token),
       body: JSON.stringify({ active })
     });
+  },
+
+  bulkCreateSuppliers: async (token, rows) => {
+    const res = await fetch(`${API_BASE}/admin/receivers/bulk`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify({ rows })
+    });
+    return res.json();
   },
 
   // Dispatches
