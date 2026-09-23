@@ -240,7 +240,7 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
         <div className="panel">
           <h3>Resolve dispute</h3>
           <p className="sub">
-            Add a resolution note — this closes the dispute and moves it into the receiver's history.
+            Add a resolution note — this closes the dispute and moves it into the supplier's history.
           </p>
           <form onSubmit={handleResolve}>
             <textarea
