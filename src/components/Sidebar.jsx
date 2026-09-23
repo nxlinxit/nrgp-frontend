@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Building2, LogOut, LayoutDashboard, PlusCircle, Clock, AlertTriangle, CheckCircle, Archive, Inbox } from 'lucide-react';
+import { Users, Building2, LogOut, LayoutDashboard, PlusCircle, Clock, AlertTriangle, CheckCircle, Archive } from 'lucide-react';
 
 const NAV_NX = [
   { key: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard },
@@ -16,11 +16,7 @@ const NAV_ADMIN = [
   { key: 'receivers', label: 'Suppliers', Icon: Building2 }
 ];
 
-const NAV_RECEIVER = [
-  { key: 'open', label: 'Open', Icon: Inbox },
-  { key: 'disputed', label: 'Disputed', Icon: AlertTriangle },
-  { key: 'history', label: 'History', Icon: Archive }
-];
+const NAV_RECEIVER = NAV_NX.filter((item) => item.key !== 'new-dispatch');
 
 const NAV_BY_ROLE = { ADMIN: NAV_ADMIN, NX: NAV_NX, RECEIVER: NAV_RECEIVER };
 
