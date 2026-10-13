@@ -22,7 +22,7 @@ export default function Login({ onLoginSuccess }) {
         // Pass authenticated user object & token up to App
         onLoginSuccess(data.user, data.token);
       } else {
-        setErrorMsg(data.error || 'Invalid credentials. Please try again.');
+        setErrorMsg(data.message || data.error || 'Invalid credentials. Please try again.');
       }
     } catch (err) {
       setErrorMsg('Unable to connect to login service. Please try again later.');

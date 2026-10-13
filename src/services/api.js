@@ -15,6 +15,11 @@ export const api = {
     });
   },
 
+  // Validates a stored token and returns the signed-in user
+  getMe: async (token) => {
+    return fetch(`${API_BASE}/auth/me`, { headers: getHeaders(token) });
+  },
+
   // Admin User Management
   getUsers: async (token) => {
     const res = await fetch(`${API_BASE}/admin/users`, { headers: getHeaders(token) });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Login from './pages/Login';
@@ -8,6 +8,7 @@ import NxDashboard from './pages/NxDashboard';
 import NxNewDispatch from './pages/NxNewDispatch';
 import DispatchList from './pages/DispatchList';
 import DispatchDetail from './pages/DispatchDetail';
+import { api } from './services/api';
 
 const TAB_META = {
   'nx-users': { title: 'NX employee accounts', breadcrumb: 'NX employees' },
@@ -21,12 +22,75 @@ const TAB_META = {
 };
 
 const DEFAULT_TAB_BY_ROLE = { ADMIN: 'nx-users', NX: 'dashboard', RECEIVER: 'dashboard' };
+const ADMIN_ONLY_TABS = ['nx-users', 'receivers'];
+const TAB_STORAGE_KEY = 'nrgp_active_tab';
+
+const isTabAllowed = (tab, role) => {
+  if (!TAB_META[tab]) return false;
+  if (ADMIN_ONLY_TABS.includes(tab)) return role === 'ADMIN';
+  if (tab === 'new-dispatch') return role !== 'RECEIVER';
+  return true;
+};
+
+const readStoredTab = () => {
+  try {
+    return sessionStorage.getItem(TAB_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const storeTab = (tab) => {
+  try {
+    if (tab) sessionStorage.setItem(TAB_STORAGE_KEY, tab);
+    else sessionStorage.removeItem(TAB_STORAGE_KEY);
+  } catch {
+    // Storage unavailable (e.g. private mode) — the tab just won't survive a refresh.
+  }
+};
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('nrgp_token') || '');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [activeDispatchId, setActiveDispatchId] = useState(null);
+  // True while a stored token is being checked, so a refresh doesn't flash the login page.
+  const [restoringSession, setRestoringSession] = useState(() => Boolean(localStorage.getItem('nrgp_token')));
+
+  useEffect(() => {
+    if (!restoringSession) return;
+    let cancelled = false;
+
+    const restore = async () => {
+      try {
+        const res = await api.getMe(token);
+        if (cancelled) return;
+        if (res.ok) {
+          const data = await res.json();
+          const storedTab = readStoredTab();
+          setUser(data.user);
+          setActiveTab(isTabAllowed(storedTab, data.user.role) ? storedTab : (DEFAULT_TAB_BY_ROLE[data.user.role] || 'dashboard'));
+        } else if (res.status === 401 || res.status === 403) {
+          // Expired or invalid token, or the account was deactivated.
+          setToken('');
+          localStorage.removeItem('nrgp_token');
+          storeTab(null);
+        }
+      } catch (err) {
+        console.error('Failed to restore session:', err);
+      } finally {
+        if (!cancelled) setRestoringSession(false);
+      }
+    };
+
+    restore();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (user) storeTab(activeTab);
+  }, [user, activeTab]);
 
   const handleLoginSuccess = (loggedInUser, authToken) => {
     setUser(loggedInUser);
@@ -38,13 +102,19 @@ export default function App() {
   const handleLogout = () => {
     setUser(null);
     setToken('');
+    setActiveDispatchId(null);
     localStorage.removeItem('nrgp_token');
+    storeTab(null);
   };
 
   const goToTab = (tab) => {
     setActiveDispatchId(null);
     setActiveTab(tab);
   };
+
+  if (restoringSession) {
+    return <div className="login-wrapper" style={{ color: '#FFF' }}>Loading...</div>;
+  }
 
   if (!user) {
     return <Login onLoginSuccess={handleLoginSuccess} />;
