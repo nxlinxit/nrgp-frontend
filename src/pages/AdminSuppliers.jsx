@@ -129,14 +129,15 @@ export default function AdminSuppliers({ token }) {
             <th>NAME</th>
             <th>LOGIN EMAIL</th>
             <th>ADDRESS</th>
+            <th>STATUS</th>
             <th style={{ textAlign: 'right' }}>ACTIONS</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
-            <tr><td colSpan="5" style={{ textAlign: 'center' }}>Loading supplier records...</td></tr>
+            <tr><td colSpan="6" style={{ textAlign: 'center' }}>Loading supplier records...</td></tr>
           ) : suppliers.length === 0 ? (
-            <tr><td colSpan="5" style={{ textAlign: 'center' }}>No suppliers found.</td></tr>
+            <tr><td colSpan="6" style={{ textAlign: 'center' }}>No suppliers found.</td></tr>
           ) : (
             suppliers.map((sup) => (
               <tr key={sup.id}>
@@ -144,6 +145,11 @@ export default function AdminSuppliers({ token }) {
                 <td>{sup.name}</td>
                 <td>{sup.login_email || 'N/A'}</td>
                 <td>{sup.address || 'N/A'}</td>
+                <td>
+                  <span className={`status-pill ${sup.active !== false ? 'active' : 'inactive'}`}>
+                    • {sup.active !== false ? 'Active' : 'Inactive'}
+                  </span>
+                </td>
                 <td style={{ textAlign: 'right' }}>
                   <div className="action-btn-group">
                     <button className="btn-action" onClick={() => openEditModal(sup)}>Edit</button>
