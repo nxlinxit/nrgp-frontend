@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { getPackageLabel } from '../constants/packageTypes';
+import { NX_DECISIONS, EVENT_LABELS, getActorLabel, getDecisionLabel, getStatusLabel } from '../constants/statuses';
+import { formatEventTime } from '../utils/dispatchExport';
 
 const toDatetimeLocal = (value) => {
   const d = value ? new Date(value) : new Date();
@@ -19,14 +21,18 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
   const [receivingDateTime, setReceivingDateTime] = useState('');
   const [formLines, setFormLines] = useState([]);
 
-  // NX dispute resolution form state
-  const [resolutionNote, setResolutionNote] = useState('');
+  // NX reply (Disputed / Open ticket) and Open ticket remark form state
+  const [replyDecision, setReplyDecision] = useState('');
+  const [remarkText, setRemarkText] = useState('');
 
   const load = async () => {
     setLoading(true);
     try {
       const data = await api.getDispatch(token, dispatchId);
       setDispatch(data);
+      setReplyDecision(data.nx_decision || '');
+      // Opening a dispatch marks it read, so refresh the unread badges.
+      onChanged?.();
 
       if (user.role === 'RECEIVER' && data.status === 'pending') {
         setReceivingDateTime(toDatetimeLocal(null));
@@ -93,29 +99,62 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
     }
   };
 
-  const handleResolve = async (e) => {
-    e.preventDefault();
-    if (!resolutionNote.trim()) {
-      alert('Add a resolution note before marking this resolved.');
-      return;
-    }
+  // Runs a dispute action (reply / remark / resolve) and reloads on success.
+  const runAction = async (request, failMessage) => {
     setSaving(true);
     try {
-      const res = await api.resolveDispute(token, dispatchId, resolutionNote.trim());
+      const res = await request();
       if (res.ok) {
-        setResolutionNote('');
+        setRemarkText('');
         await load();
-        onChanged?.();
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(data.message || 'Failed to resolve dispute');
+        alert(data.message || failMessage);
       }
     } catch (err) {
-      console.error('Resolve dispute error:', err);
+      console.error(`${failMessage}:`, err);
       alert('Unable to reach the server. Please try again.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleReply = (e) => {
+    e.preventDefault();
+    if (!replyDecision) {
+      alert('Choose your reply to the supplier.');
+      return;
+    }
+    if (!remarkText.trim()) {
+      alert('Add a remark explaining your reply.');
+      return;
+    }
+    runAction(() => api.replyToDispute(token, dispatchId, replyDecision, remarkText.trim()), 'Failed to send reply');
+  };
+
+  // In an open ticket NX may also change its answer; a changed answer is sent
+  // as a new reply so the history keeps both.
+  const handleAddRemark = () => {
+    if (!remarkText.trim()) {
+      alert('Type a remark first.');
+      return;
+    }
+    const decisionChanged = isNx && replyDecision && replyDecision !== dispatch.nx_decision;
+    runAction(
+      () => decisionChanged
+        ? api.replyToDispute(token, dispatchId, replyDecision, remarkText.trim())
+        : api.addRemark(token, dispatchId, remarkText.trim()),
+      'Failed to add remark'
+    );
+  };
+
+  const handleResolve = () => {
+    if (!remarkText.trim()) {
+      alert('Add a closing remark before resolving.');
+      return;
+    }
+    if (!window.confirm(`Resolve ${dispatch.transaction_id}? This closes the ticket for both NX and the supplier.`)) return;
+    runAction(() => api.resolveTicket(token, dispatchId, remarkText.trim()), 'Failed to resolve ticket');
   };
 
   if (loading) {
@@ -126,7 +165,11 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
   }
 
   const editable = user.role === 'RECEIVER' && dispatch.status === 'pending';
-  const canResolve = (user.role === 'NX' || user.role === 'ADMIN') && dispatch.status === 'disputed';
+  const isNx = user.role === 'NX' || user.role === 'ADMIN';
+  const canReply = isNx && dispatch.status === 'disputed';
+  const isOpenTicket = dispatch.status === 'open';
+  const events = dispatch.events || [];
+  const resolvedEvent = [...events].reverse().find((ev) => ev.event_type === 'resolved');
   const lines = editable ? formLines : (dispatch.lines || []);
 
   return (
@@ -135,7 +178,7 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
 
       <div className="header-row">
         <h1 className="page-title">{dispatch.transaction_id}</h1>
-        <span className={`dispatch-status ${dispatch.status}`}>{dispatch.status.replace('_', ' ')}</span>
+        <span className={`dispatch-status ${dispatch.status}`}>{getStatusLabel(dispatch.status)}</span>
       </div>
 
       <div className="panel">
@@ -226,7 +269,11 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
 
       {dispatch.status === 'resolved' && dispatch.resolution_note && (
         <div className="panel">
-          <h3>Resolution note</h3>
+          <h3>Resolution</h3>
+          <p className="sub">
+            {resolvedEvent ? `Resolved by ${getActorLabel(resolvedEvent.actor_role, resolvedEvent.actor_name)} · ${formatEventTime(resolvedEvent)}` : 'Resolved'}
+            {dispatch.nx_decision && ` · NX reply: "${getDecisionLabel(dispatch.nx_decision)}"`}
+          </p>
           <p style={{ color: 'var(--text-dark)' }}>{dispatch.resolution_note}</p>
         </div>
       )}
@@ -239,32 +286,102 @@ export default function DispatchDetail({ token, user, dispatchId, onBack, onChan
         </form>
       )}
 
-      {canResolve && (
+      {canReply && (
         <div className="panel">
-          <h3>Resolve dispute</h3>
+          <h3>Reply to supplier</h3>
           <p className="sub">
-            Add a resolution note — this closes the dispute and moves it into the supplier's history.
+            Choose your answer and explain it. The dispatch moves to <b>Open ticket</b> and the supplier is notified.
           </p>
-          <form onSubmit={handleResolve}>
+          <form onSubmit={handleReply}>
+            <DecisionChoice value={replyDecision} onChange={setReplyDecision} />
             <textarea
               rows={3}
-              value={resolutionNote}
-              onChange={(e) => setResolutionNote(e.target.value)}
-              placeholder="e.g. Verified CCTV, recovered misrouted carton, handed over on-site."
-              style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '6px', marginBottom: '12px' }}
+              value={remarkText}
+              onChange={(e) => setRemarkText(e.target.value)}
+              placeholder="e.g. Loading sheet and gate CCTV show 60 cartons loaded."
+              className="remark-input"
             />
             <button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? 'Saving...' : 'Mark resolved'}
+              {saving ? 'Sending...' : 'Send reply'}
             </button>
           </form>
         </div>
       )}
 
       {user.role === 'RECEIVER' && dispatch.status === 'disputed' && (
-        <div style={{ padding: '10px 12px', background: '#FEF3C7', color: '#B45309', borderRadius: '6px', fontSize: '0.85rem' }}>
-          This dispute is with the NX dispatch team. You'll see it move to History once they mark it resolved.
+        <div className="notice warning">
+          Your mismatch report is with the NX dispatch team. You'll be notified here when they reply.
         </div>
       )}
+
+      {isOpenTicket && (
+        <div className="panel">
+          <h3>Open ticket</h3>
+          {dispatch.nx_decision && (
+            <div className={`decision-banner ${dispatch.nx_decision}`}>
+              NX reply: <b>{getDecisionLabel(dispatch.nx_decision)}</b>
+            </div>
+          )}
+          <p className="sub">
+            Add a remark to continue the discussion, or resolve the ticket with a closing remark once both sides agree.
+          </p>
+          {isNx && (
+            <>
+              <label className="field-label">NX reply (change it if your answer has changed)</label>
+              <DecisionChoice value={replyDecision} onChange={setReplyDecision} />
+            </>
+          )}
+          <textarea
+            rows={3}
+            value={remarkText}
+            onChange={(e) => setRemarkText(e.target.value)}
+            placeholder={isNx ? 'Your remark to the supplier' : 'Your remark to NX'}
+            className="remark-input"
+          />
+          <div className="action-btn-group">
+            <button type="button" className="btn-action" disabled={saving} onClick={handleAddRemark}>
+              {saving ? 'Saving...' : 'Add remark'}
+            </button>
+            <button type="button" className="btn-primary" disabled={saving} onClick={handleResolve}>
+              Resolve
+            </button>
+          </div>
+        </div>
+      )}
+
+      {events.length > 0 && (
+        <div className="panel">
+          <h3>History</h3>
+          <p className="sub">Everything that has happened to this dispatch, oldest first.</p>
+          <ol className="timeline">
+            {events.map((ev) => (
+              <li key={ev.id} className={`timeline-item ${ev.actor_role === 'RECEIVER' ? 'supplier' : 'nx'} ${ev.event_type}`}>
+                <div className="timeline-meta">
+                  <span>{formatEventTime(ev)}</span>
+                  <span>·</span>
+                  <b>{getActorLabel(ev.actor_role, ev.actor_name)}</b>
+                </div>
+                <div className="timeline-title">{EVENT_LABELS[ev.event_type] || ev.event_type}</div>
+                {ev.decision && <div className="timeline-decision">"{getDecisionLabel(ev.decision)}"</div>}
+                {ev.remark && <div className="timeline-remark">{ev.remark}</div>}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DecisionChoice({ value, onChange }) {
+  return (
+    <div className="decision-choice">
+      {NX_DECISIONS.map((d) => (
+        <label key={d.value} className={`decision-option ${value === d.value ? 'selected' : ''}`}>
+          <input type="radio" name="nx-decision" value={d.value} checked={value === d.value} onChange={() => onChange(d.value)} />
+          {d.label}
+        </label>
+      ))}
     </div>
   );
 }

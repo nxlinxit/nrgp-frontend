@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Login from './pages/Login';
@@ -8,6 +8,7 @@ import NxDashboard from './pages/NxDashboard';
 import NxNewDispatch from './pages/NxNewDispatch';
 import DispatchList from './pages/DispatchList';
 import DispatchDetail from './pages/DispatchDetail';
+import NotificationPopup from './components/NotificationPopup';
 import { api } from './services/api';
 
 const TAB_META = {
@@ -17,6 +18,7 @@ const TAB_META = {
   'new-dispatch': { title: 'New dispatch entry', breadcrumb: 'New dispatch' },
   pending: { title: 'Pending with supplier', breadcrumb: 'Pending' },
   disputed: { title: 'Disputed dispatches', breadcrumb: 'Disputed' },
+  open: { title: 'Open tickets', breadcrumb: 'Open tickets' },
   resolved: { title: 'Resolved disputes', breadcrumb: 'Resolved' },
   historical: { title: 'Historical data', breadcrumb: 'Historical' }
 };
@@ -92,6 +94,38 @@ export default function App() {
     if (user) storeTab(activeTab);
   }, [user, activeTab]);
 
+  // Unread badges for the sidebar, plus the supplier's pop-up entries.
+  const [notifications, setNotifications] = useState({ unread: {}, popup: [] });
+
+  const refreshNotifications = useCallback(async () => {
+    if (!token) return;
+    try {
+      const data = await api.getNotifications(token);
+      setNotifications({ unread: data.unread || {}, popup: data.popup || [] });
+    } catch (err) {
+      console.error('Failed to load notifications:', err);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+    refreshNotifications();
+    const timer = setInterval(refreshNotifications, 60000);
+    return () => clearInterval(timer);
+  }, [user, refreshNotifications]);
+
+  // Marks everything the pop-up showed as seen; it won't pop up again.
+  const dismissPopup = async () => {
+    const newest = notifications.popup[0];
+    setNotifications((prev) => ({ ...prev, popup: [] }));
+    if (!newest) return;
+    try {
+      await api.dismissNotifications(token, newest.id);
+    } catch (err) {
+      console.error('Failed to dismiss notifications:', err);
+    }
+  };
+
   const handleLoginSuccess = (loggedInUser, authToken) => {
     setUser(loggedInUser);
     setToken(authToken);
@@ -103,6 +137,7 @@ export default function App() {
     setUser(null);
     setToken('');
     setActiveDispatchId(null);
+    setNotifications({ unread: {}, popup: [] });
     localStorage.removeItem('nrgp_token');
     storeTab(null);
   };
@@ -110,6 +145,7 @@ export default function App() {
   const goToTab = (tab) => {
     setActiveDispatchId(null);
     setActiveTab(tab);
+    refreshNotifications();
   };
 
   if (restoringSession) {
@@ -130,7 +166,7 @@ export default function App() {
           user={user}
           dispatchId={activeDispatchId}
           onBack={() => setActiveDispatchId(null)}
-          onChanged={() => {}}
+          onChanged={refreshNotifications}
         />
       );
     }
@@ -146,6 +182,7 @@ export default function App() {
       if (activeTab === 'new-dispatch' && user.role !== 'RECEIVER') return <NxNewDispatch token={token} user={user} onCreated={() => goToTab('dashboard')} />;
       if (activeTab === 'pending') return <DispatchList token={token} status="pending" title={TAB_META.pending.title} breadcrumb={`${portalLabel} / Pending`} emptyMessage={user.role === 'RECEIVER' ? 'Nothing waiting on you right now — new dispatches will appear here.' : 'No dispatches currently pending with a supplier.'} onOpenDetail={setActiveDispatchId} />;
       if (activeTab === 'disputed') return <DispatchList token={token} status="disputed" title={TAB_META.disputed.title} breadcrumb={`${portalLabel} / Disputed`} emptyMessage="All clear — no open disputes right now." onOpenDetail={setActiveDispatchId} />;
+      if (activeTab === 'open') return <DispatchList token={token} status="open" title={TAB_META.open.title} breadcrumb={`${portalLabel} / Open tickets`} emptyMessage={user.role === 'RECEIVER' ? 'No open tickets — NX replies to your mismatch reports will appear here.' : 'No open tickets right now.'} onOpenDetail={setActiveDispatchId} />;
       if (activeTab === 'resolved') return <DispatchList token={token} status="resolved" title={TAB_META.resolved.title} breadcrumb={`${portalLabel} / Resolved`} emptyMessage="No resolved disputes yet." onOpenDetail={setActiveDispatchId} />;
       if (activeTab === 'historical') return <DispatchList token={token} status={null} title={TAB_META.historical.title} breadcrumb={`${portalLabel} / Historical`} emptyMessage="No historical records yet." onOpenDetail={setActiveDispatchId} />;
     }
@@ -155,12 +192,24 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar user={user} activeTab={activeTab} setActiveTab={goToTab} onLogout={handleLogout} />
+      <Sidebar user={user} activeTab={activeTab} setActiveTab={goToTab} onLogout={handleLogout} unread={notifications.unread} />
 
       <div className="main-content">
         <Header title={meta.title} breadcrumb={meta.breadcrumb} />
         {renderBody()}
       </div>
+
+      {user.role === 'RECEIVER' && notifications.popup.length > 0 && (
+        <NotificationPopup
+          items={notifications.popup}
+          onLater={dismissPopup}
+          onOpen={(item) => {
+            dismissPopup();
+            setActiveTab(notifications.popup.some((i) => i.dispatch_id === item.dispatch_id && i.event_type === 'resolved') ? 'resolved' : 'open');
+            setActiveDispatchId(item.dispatch_id);
+          }}
+        />
+      )}
     </div>
   );
 }

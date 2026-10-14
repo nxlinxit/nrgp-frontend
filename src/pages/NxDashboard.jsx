@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
+import { getStatusLabel } from '../constants/statuses';
 
 export default function NxDashboard({ token, user, onNavigate, onOpenDetail }) {
   const [dispatches, setDispatches] = useState([]);
@@ -24,6 +25,7 @@ export default function NxDashboard({ token, user, onNavigate, onOpenDetail }) {
   const counts = {
     pending: dispatches.filter((d) => d.status === 'pending').length,
     disputed: dispatches.filter((d) => d.status === 'disputed').length,
+    open: dispatches.filter((d) => d.status === 'open').length,
     resolved: dispatches.filter((d) => d.status === 'resolved').length,
     confirmed: dispatches.filter((d) => d.status === 'confirmed').length
   };
@@ -44,6 +46,10 @@ export default function NxDashboard({ token, user, onNavigate, onOpenDetail }) {
         <div className="stat-card disputed" onClick={() => onNavigate('disputed')}>
           <div className="stat-num">{counts.disputed}</div>
           <div className="stat-label">Disputed</div>
+        </div>
+        <div className="stat-card open" onClick={() => onNavigate('open')}>
+          <div className="stat-num">{counts.open}</div>
+          <div className="stat-label">Open tickets</div>
         </div>
         <div className="stat-card resolved" onClick={() => onNavigate('resolved')}>
           <div className="stat-num">{counts.resolved}</div>
@@ -79,14 +85,17 @@ export default function NxDashboard({ token, user, onNavigate, onOpenDetail }) {
             <tr><td colSpan="5" style={{ textAlign: 'center' }}>No dispatches yet.</td></tr>
           ) : (
             recent.map((disp) => (
-              <tr key={disp.id} className="clickable-row" onClick={() => onOpenDetail(disp.id)}>
-                <td style={{ fontWeight: '700', color: 'var(--navy)' }}>{disp.transaction_id}</td>
+              <tr key={disp.id} className={`clickable-row ${disp.unread ? 'unread' : ''}`} onClick={() => onOpenDetail(disp.id)}>
+                <td style={{ fontWeight: '700', color: 'var(--navy)' }}>
+                  {disp.unread && <span className="unread-dot" title="New activity" />}
+                  {disp.transaction_id}
+                </td>
                 <td>{disp.receiver_name}</td>
                 <td>{disp.vehicle_no || 'N/A'}</td>
                 <td>{new Date(disp.dispatch_date_time).toLocaleString()}</td>
                 <td>
                   <span className={`dispatch-status ${disp.status}`}>
-                    {disp.status.replace('_', ' ')}
+                    {getStatusLabel(disp.status)}
                   </span>
                 </td>
               </tr>

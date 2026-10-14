@@ -121,8 +121,12 @@ export const api = {
   },
 
   // Dispatches
-  getDispatches: async (token, { status } = {}) => {
-    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+  // details: true also returns package lines and full history (for exports)
+  getDispatches: async (token, { status, details } = {}) => {
+    const params = new URLSearchParams();
+    if (status) params.set('status', status);
+    if (details) params.set('details', '1');
+    const query = params.toString() ? `?${params}` : '';
     const res = await fetch(`${API_BASE}/dispatches${query}`, { headers: getHeaders(token) });
     return res.json();
   },
@@ -148,11 +152,43 @@ export const api = {
     });
   },
 
-  resolveDispute: async (token, id, resolutionNote) => {
+  // NX answers a dispute; moves it to Open ticket
+  replyToDispute: async (token, id, decision, remark) => {
+    return fetch(`${API_BASE}/dispatches/${id}/reply`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify({ decision, remark })
+    });
+  },
+
+  addRemark: async (token, id, remark) => {
+    return fetch(`${API_BASE}/dispatches/${id}/remark`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify({ remark })
+    });
+  },
+
+  resolveTicket: async (token, id, remark) => {
     return fetch(`${API_BASE}/dispatches/${id}/resolve`, {
       method: 'POST',
       headers: getHeaders(token),
-      body: JSON.stringify({ resolution_note: resolutionNote })
+      body: JSON.stringify({ remark })
+    });
+  },
+
+  // Unread counts per status, plus the supplier pop-up entries
+  getNotifications: async (token) => {
+    const res = await fetch(`${API_BASE}/notifications`, { headers: getHeaders(token) });
+    if (!res.ok) throw new Error(`Notifications failed: ${res.status}`);
+    return res.json();
+  },
+
+  dismissNotifications: async (token, upToEventId) => {
+    return fetch(`${API_BASE}/notifications/dismiss`, {
+      method: 'POST',
+      headers: getHeaders(token),
+      body: JSON.stringify({ upToEventId })
     });
   }
 };
