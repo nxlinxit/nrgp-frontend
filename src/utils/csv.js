@@ -5,7 +5,8 @@ const escapeCell = (value) => {
 
 export function downloadCsv(filename, headers, rows) {
   const lines = [headers, ...rows].map((row) => row.map(escapeCell).join(','));
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  // The BOM makes Excel open the file as UTF-8 (otherwise "—" etc. garble).
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -67,7 +68,9 @@ function parseCsvRows(text) {
 // Parses CSV text with a header row into an array of { header: value }
 // objects, with headers normalized to lowercase/trimmed.
 export function parseCsv(text) {
-  const rows = parseCsvRows(text);
+  // Excel's "CSV UTF-8" format starts with a BOM, which would otherwise end
+  // up glued to the first header name.
+  const rows = parseCsvRows(text.replace(/^\uFEFF/, ''));
   if (rows.length === 0) return { headers: [], records: [] };
 
   const headers = rows[0].map((h) => h.trim().toLowerCase());

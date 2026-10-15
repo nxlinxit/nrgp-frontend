@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { api } from '../services/api';
 import { downloadCsv } from '../utils/csv';
+import { buildDispatchRows, buildHistoryRows } from '../utils/dispatchExport';
+import { getStatusLabel } from '../constants/statuses';
 
 const formatDateTime = (value) => (value ? new Date(value).toLocaleString() : '—');
 
@@ -19,6 +21,7 @@ export default function DispatchList({ token, status, title, breadcrumb, emptyMe
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [search, setSearch] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -78,19 +81,24 @@ export default function DispatchList({ token, status, title, breadcrumb, emptyMe
     setSearch('');
   };
 
-  const handleExport = () => {
-    const headers = ['Transaction ID', 'Supplier', 'Dispatch Date & Time', 'Vehicle', 'Dispatch Submitted', 'Receipt Submitted', 'Status'];
-    const rows = filtered.map((d) => [
-      d.transaction_id,
-      d.receiver_name,
-      formatDateTime(d.dispatch_date_time),
-      d.vehicle_no || 'N/A',
-      formatDateTime(d.dispatch_submitted_at),
-      formatDateTime(d.receipt_submitted_at),
-      d.status.replace('_', ' ')
-    ]);
-    const stamp = new Date().toISOString().slice(0, 10);
-    downloadCsv(`${(title || 'dispatches').toLowerCase().replace(/\s+/g, '-')}-${stamp}.csv`, headers, rows);
+  // Exports re-fetch with package lines and history, then keep only the rows
+  // currently shown so the file matches the filters on screen.
+  const handleExport = async (kind) => {
+    setExporting(true);
+    try {
+      const data = await api.getDispatches(token, { status, details: true });
+      const shownIds = new Set(filtered.map((d) => d.id));
+      const rows = (Array.isArray(data) ? data : []).filter((d) => shownIds.has(d.id));
+      const { headers, rows: cells } = kind === 'history' ? buildHistoryRows(rows) : buildDispatchRows(rows);
+      const stamp = new Date().toISOString().slice(0, 10);
+      const base = (title || 'dispatches').toLowerCase().replace(/\s+/g, '-');
+      downloadCsv(`${base}${kind === 'history' ? '-history' : ''}-${stamp}.csv`, headers, cells);
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('Could not export. Please try again.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -125,9 +133,14 @@ export default function DispatchList({ token, status, title, breadcrumb, emptyMe
         {hasActiveFilters && (
           <button type="button" className="btn-action" onClick={clearFilters}>Clear filters</button>
         )}
-        <button type="button" className="btn-primary" style={{ marginLeft: 'auto' }} onClick={handleExport} disabled={filtered.length === 0}>
-          Export CSV
-        </button>
+        <div className="action-btn-group" style={{ marginLeft: 'auto' }}>
+          <button type="button" className="btn-action" onClick={() => handleExport('history')} disabled={filtered.length === 0 || exporting}>
+            Export history
+          </button>
+          <button type="button" className="btn-primary" onClick={() => handleExport('dispatches')} disabled={filtered.length === 0 || exporting}>
+            {exporting ? 'Exporting...' : 'Export CSV'}
+          </button>
+        </div>
       </div>
 
       <table className="custom-table" style={{ marginTop: '16px' }}>
@@ -149,8 +162,11 @@ export default function DispatchList({ token, status, title, breadcrumb, emptyMe
             <tr><td colSpan="7" style={{ textAlign: 'center' }}>{dispatches.length === 0 ? (emptyMessage || 'No dispatches found.') : 'No dispatches match the current filters.'}</td></tr>
           ) : (
             filtered.map((disp) => (
-              <tr key={disp.id} className="clickable-row" onClick={() => onOpenDetail(disp.id)}>
-                <td style={{ fontWeight: '700', color: 'var(--navy)' }}>{disp.transaction_id}</td>
+              <tr key={disp.id} className={`clickable-row ${disp.unread ? 'unread' : ''}`} onClick={() => onOpenDetail(disp.id)}>
+                <td style={{ fontWeight: '700', color: 'var(--navy)' }}>
+                  {disp.unread && <span className="unread-dot" title="New activity" />}
+                  {disp.transaction_id}
+                </td>
                 <td>{disp.receiver_name}</td>
                 <td>{formatDateTime(disp.dispatch_date_time)}</td>
                 <td>{disp.vehicle_no || 'N/A'}</td>
@@ -158,7 +174,7 @@ export default function DispatchList({ token, status, title, breadcrumb, emptyMe
                 <td>{formatDateTime(disp.receipt_submitted_at)}</td>
                 <td>
                   <span className={`dispatch-status ${disp.status}`}>
-                    {disp.status.replace('_', ' ')}
+                    {getStatusLabel(disp.status)}
                   </span>
                 </td>
               </tr>

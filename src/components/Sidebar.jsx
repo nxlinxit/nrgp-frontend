@@ -1,11 +1,12 @@
 import React from 'react';
-import { Users, Building2, LogOut, LayoutDashboard, PlusCircle, Clock, AlertTriangle, CheckCircle, Archive } from 'lucide-react';
+import { Users, Building2, LogOut, LayoutDashboard, PlusCircle, Clock, AlertTriangle, MessageSquare, CheckCircle, Archive } from 'lucide-react';
 
 const NAV_NX = [
   { key: 'dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { key: 'new-dispatch', label: 'New dispatch', Icon: PlusCircle },
   { key: 'pending', label: 'Pending with supplier', Icon: Clock },
   { key: 'disputed', label: 'Disputed', Icon: AlertTriangle },
+  { key: 'open', label: 'Open tickets', Icon: MessageSquare },
   { key: 'resolved', label: 'Resolved', Icon: CheckCircle },
   { key: 'historical', label: 'Historical data', Icon: Archive }
 ];
@@ -20,7 +21,10 @@ const NAV_RECEIVER = NAV_NX.filter((item) => item.key !== 'new-dispatch');
 
 const NAV_BY_ROLE = { ADMIN: NAV_ADMIN, NX: NAV_NX, RECEIVER: NAV_RECEIVER };
 
-export default function Sidebar({ user, activeTab, setActiveTab, onLogout }) {
+// Tabs whose unread count (by dispatch status) is shown as a badge.
+const BADGE_TABS = ['pending', 'disputed', 'open', 'resolved'];
+
+export default function Sidebar({ user, activeTab, setActiveTab, onLogout, unread = {} }) {
   const nav = NAV_BY_ROLE[user.role] || [];
 
   return (
@@ -39,6 +43,9 @@ export default function Sidebar({ user, activeTab, setActiveTab, onLogout }) {
         {nav.map(({ key, label, Icon }) => (
           <div key={key} className={`nav-item ${activeTab === key ? 'active' : ''}`} onClick={() => setActiveTab(key)}>
             <Icon className="nav-icon" size={18} /> {label}
+            {BADGE_TABS.includes(key) && unread[key] > 0 && (
+              <span className="nav-badge" title={`${unread[key]} with new activity`}>{unread[key]}</span>
+            )}
           </div>
         ))}
       </div>
