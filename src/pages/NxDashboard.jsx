@@ -27,7 +27,8 @@ export default function NxDashboard({ token, user, onNavigate, onOpenDetail }) {
     disputed: dispatches.filter((d) => d.status === 'disputed').length,
     open: dispatches.filter((d) => d.status === 'open').length,
     resolved: dispatches.filter((d) => d.status === 'resolved').length,
-    confirmed: dispatches.filter((d) => d.status === 'confirmed').length
+    // Historical data lists every dispatch, whatever its status.
+    all: dispatches.length
   };
   const recent = dispatches.slice(0, 5);
 
@@ -56,7 +57,7 @@ export default function NxDashboard({ token, user, onNavigate, onOpenDetail }) {
           <div className="stat-label">Resolved</div>
         </div>
         <div className="stat-card confirmed" onClick={() => onNavigate('historical')}>
-          <div className="stat-num">{counts.confirmed}</div>
+          <div className="stat-num">{counts.all}</div>
           <div className="stat-label">Historical data</div>
         </div>
       </div>
